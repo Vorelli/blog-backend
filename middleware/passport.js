@@ -11,9 +11,9 @@ passport.use(
   'local',
   new LocalStrategy((username, password, done) => {
     const findUserQuery = `
-    SELECT username, password_hash
+    SELECT users.user_id, username, password_hash
     FROM users
-    INNER JOIN user_passes ON users.id=user_passes.user_id
+    INNER JOIN user_passes ON users.user_id=user_passes.user_id
     WHERE username=($1)`;
     const findUserQueryValues = [username];
 
@@ -43,24 +43,19 @@ passport.use(
   new JWTStrategy(
     {
       jwtFromRequest: extractJWT.fromAuthHeaderAsBearerToken(),
-      secretOrKey: 'secret'
+      secretOrKey: process.env.SECRET
     },
     (jwtPayload, cb) => {
       const findUserQuery = `
       SELECT *
       FROM users
-      WHERE id=($1)`;
+      WHERE user_id=($1)`;
       pool
-        .query(findUserQuery, [jwtPayload.id])
+        .query(findUserQuery, [jwtPayload.user_id])
         .then((result) => cb(null, result.rows[0]))
         .catch((err) => cb(err));
     }
   )
 );
-
-function getSecret() {
-  console.log(process.env.SECRET);
-  return process.env.SECRET;
-}
 
 module.exports = passport;
