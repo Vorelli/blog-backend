@@ -8,7 +8,6 @@ const { Pool } = require('pg');
 const pool = new Pool();
 const { v5 } = require('uuid');
 const formidable = require('formidable');
-const { response } = require('../app');
 
 module.exports.index = function (req, res, next) {
   res.json({
@@ -276,7 +275,6 @@ module.exports.postCreatePOST = [
   },
 
   (req, res, next) => {
-    console.log(req.body);
     const message = {
       id: v5(req.body.title + req.body.body, process.env.SECRETUUID),
       user_id: res.locals.currentUser.user_id,
