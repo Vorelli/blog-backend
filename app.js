@@ -7,8 +7,8 @@ var logger = require('morgan');
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 const passport = require('./middleware/passport');
 
-const frontendRouter = require('./routes/frontEnd');
-const backendRouter = require('./routes/backEnd');
+const frontendRouter = require('./routes/frontend');
+const backendRouter = require('./routes/backend');
 
 var app = express();
 
