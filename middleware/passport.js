@@ -10,6 +10,7 @@ const pool = new Pool();
 passport.use(
   'local',
   new LocalStrategy((username, password, done) => {
+    console.log(username);
     const findUserQuery = `
     SELECT users.user_id, username, password_hash
     FROM users
