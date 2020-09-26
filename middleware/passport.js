@@ -10,7 +10,6 @@ const pool = new Pool();
 passport.use(
   'local',
   new LocalStrategy((username, password, done) => {
-    console.log(username);
     const findUserQuery = `
     SELECT users.user_id, username, password_hash
     FROM users
@@ -22,7 +21,6 @@ passport.use(
       .query(findUserQuery, findUserQueryValues)
       .then((value) => {
         const atLeastOneUser = value.rows.length > 0;
-        console.log(value);
         const passwordMatchesHash = bcrypt.compareSync(
           password,
           value.rows[0].password_hash

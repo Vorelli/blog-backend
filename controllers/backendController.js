@@ -47,7 +47,6 @@ module.exports.loginPOST = [
     }
 
     passport.authenticate('local', { session: false }, (err, user, info) => {
-      console.log(err);
       if (err || !user) {
         res.locals.errors.push({ msg: 'Incorrect email/password combination.' });
         return res
