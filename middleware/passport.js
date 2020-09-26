@@ -21,6 +21,7 @@ passport.use(
       .query(findUserQuery, findUserQueryValues)
       .then((value) => {
         const atLeastOneUser = value.rows.length > 0;
+        console.log(value);
         const passwordMatchesHash = bcrypt.compareSync(
           password,
           value.rows[0].password_hash
