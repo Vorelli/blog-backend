@@ -13,13 +13,20 @@ const backendRouter = require('./routes/backend');
 var app = express();
 
 app.use(function (req, res, next) {
-  if (
-    req.hostname == 'localhost' ||
-    req.hostname == 'https://blog-admin-frontend.herokuapp.com/' ||
-    req.hostname == 'https://blog-public-frontend.herokuapp.com/'
-  ) {
-    res.header('Access-Control-Allow-Origin', '*');
+  console.log(req.url.split('/'));
+  console.log(JSON.parse(process.env.ALLOWEDHOSTS).allowedHosts);
+  if (req.url.split('/')[1] == 'backend') {
+    if (
+      JSON.parse(process.env.ALLOWEDHOSTS).allowedHosts.find(
+        (val) => val == req.hostname
+      )
+    ) {
+      res.header('Access-Control-Allow-Origin', '*');
+    } else {
+      return res.json({ message: 'Unauthorized access to backend.' });
+    }
   }
+
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Allow-Origin, Content-Security-Policy'
