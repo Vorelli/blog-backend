@@ -5,13 +5,13 @@ const passport = require('../middleware/passport');
 const bcrypt = require('bcrypt');
 const validator = require('express-validator');
 const { Pool } = require('pg');
-const pool = new Pool();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const { v5 } = require('uuid');
 const formidable = require('formidable');
 
 module.exports.index = function (req, res, next) {
   res.json({
-    message: 'Login: /backend/login - View All Posts: /backend/posts'
+    message: 'Login: /backend/login - View All Posts: /backend/posts',
   });
 };
 
@@ -39,19 +39,24 @@ module.exports.loginPOST = [
     res.locals.errors = [];
 
     if (req.body.username.length < 3) {
-      res.locals.errors.push({ msg: 'You must supply an email.' })
+      res.locals.errors.push({ msg: 'You must supply an email.' });
     }
 
     if (req.body.password.length < 3) {
-      res.locals.errors.push({ msg: 'You must supply a password.' })
+      res.locals.errors.push({ msg: 'You must supply a password.' });
     }
 
     passport.authenticate('local', { session: false }, (err, user, info) => {
       if (err || !user) {
-        res.locals.errors.push({ msg: 'Incorrect email/password combination.' });
+        res.locals.errors.push({
+          msg: 'Incorrect email/password combination.',
+        });
         return res
           .status(400)
-          .json({ message: 'Something is not right', errors: res.locals.errors });
+          .json({
+            message: 'Something is not right',
+            errors: res.locals.errors,
+          });
       } else {
         req.login(user, { session: false }, (err) => {
           if (err) res.send(err);
@@ -62,7 +67,7 @@ module.exports.loginPOST = [
         });
       }
     })(req, res);
-  }
+  },
 ];
 
 module.exports.postViewAllGET = [
@@ -82,10 +87,10 @@ module.exports.postViewAllGET = [
         .catch((err) => next(err));
     } else {
       res.json({
-        message: 'You need to log in to view all posts. /backend/login'
+        message: 'You need to log in to view all posts. /backend/login',
       });
     }
-  }
+  },
 ];
 
 module.exports.postViewOneGET = function (req, res, next) {
@@ -103,14 +108,14 @@ module.exports.postViewOneGET = function (req, res, next) {
     else {
       Promise.all([
         client.query(findPostQuery, [postId]),
-        client.query(findCommentsQuery, [postId])
+        client.query(findCommentsQuery, [postId]),
       ])
         .then((postAndComments) => {
           const postResponse = postAndComments[0];
           const commentsResponse = postAndComments[1];
           res.json({
             post: postResponse.rows[0],
-            comments: commentsResponse.rows
+            comments: commentsResponse.rows,
           });
         })
         .catch((err) => next(err))
@@ -148,13 +153,13 @@ module.exports.postUpdatePUT = [
 
     if (!res.locals.currentUser) {
       res.locals.errors.push({
-        msg: 'You need to be logged in.'
+        msg: 'You need to be logged in.',
       });
     }
 
     if (res.locals.currentUser.user_id !== res.locals.currentMessage.user_id) {
       res.locals.errors.push({
-        msg: "You cannot edit somebody else's post."
+        msg: "You cannot edit somebody else's post.",
       });
     }
 
@@ -163,13 +168,13 @@ module.exports.postUpdatePUT = [
 
     if (!req.body.title || req.body.title.length < 3) {
       res.locals.errors.push({
-        msg: 'The title needs to be at least 3 characters long.'
+        msg: 'The title needs to be at least 3 characters long.',
       });
     }
 
     if (!req.body.body || req.body.body.length < 3) {
       res.locals.errors.push({
-        msg: 'The body needs to be at least 3 characters long.'
+        msg: 'The body needs to be at least 3 characters long.',
       });
     }
 
@@ -182,13 +187,13 @@ module.exports.postUpdatePUT = [
       user_id: res.locals.currentUser.user_id,
       public: req.body.public,
       title: req.body.title,
-      body: req.body.body
+      body: req.body.body,
     };
 
     if (res.locals.errors.length > 0) {
       res.json({
         errors: res.locals.errors,
-        message: 'Unable to create post.'
+        message: 'Unable to create post.',
       });
     } else {
       const createPostQuery = `
@@ -201,7 +206,7 @@ module.exports.postUpdatePUT = [
         message.body,
         message.public,
         message.id,
-        message.user_id
+        message.user_id,
       ];
 
       pool
@@ -209,7 +214,7 @@ module.exports.postUpdatePUT = [
         .then((value) => {
           if (value.rowCount > 0) {
             res.json({
-              message: 'Updated post successfully!'
+              message: 'Updated post successfully!',
             });
           } else {
             throw new Error(
@@ -219,7 +224,7 @@ module.exports.postUpdatePUT = [
         })
         .catch((err) => next(err));
     }
-  }
+  },
 ];
 
 module.exports.postCreatePOST = [
@@ -233,13 +238,12 @@ module.exports.postCreatePOST = [
       SELECT * FROM messages
       WHERE message_id=($1)`;
       const response = await pool.query(tryToFindDuplicatePostQuery, [
-        v5(req.body.title + req.body.body, process.env.SECRETUUID)
+        v5(req.body.title + req.body.body, process.env.SECRETUUID),
       ]);
 
       if (response.rowCount > 0) {
         res.locals.errors.push({
-          msg:
-            'Duplicate post detected. You must change the title or the body slightly.'
+          msg: 'Duplicate post detected. You must change the title or the body slightly.',
         });
       }
     } catch (err) {
@@ -248,7 +252,7 @@ module.exports.postCreatePOST = [
 
     if (!res.locals.currentUser) {
       res.locals.errors.push({
-        msg: 'You need to be logged in.'
+        msg: 'You need to be logged in.',
       });
     }
 
@@ -257,18 +261,20 @@ module.exports.postCreatePOST = [
 
     if (!req.body.title || req.body.title.length < 3) {
       res.locals.errors.push({
-        msg: 'The title needs to be at least 3 characters long.'
+        msg: 'The title needs to be at least 3 characters long.',
       });
     }
 
     if (!req.body.body || req.body.body.length < 3) {
       res.locals.errors.push({
-        msg: 'The body needs to be at least 3 characters long.'
+        msg: 'The body needs to be at least 3 characters long.',
       });
     }
 
     if (req.body.public === undefined || req.body.public === null) {
-      res.locals.errors.push({ msg: 'You must set a viewable publicly option.' })
+      res.locals.errors.push({
+        msg: 'You must set a viewable publicly option.',
+      });
     }
 
     next();
@@ -280,13 +286,13 @@ module.exports.postCreatePOST = [
       user_id: res.locals.currentUser.user_id,
       title: req.body.title,
       body: req.body.body,
-      public: req.body.public
+      public: req.body.public,
     };
 
     if (res.locals.errors.length > 0) {
       res.json({
         errors: res.locals.errors,
-        message: 'Unable to create post.'
+        message: 'Unable to create post.',
       });
     } else {
       const createPostQuery = `
@@ -299,7 +305,7 @@ module.exports.postCreatePOST = [
         message.title,
         message.body,
         message.public,
-        moment(new Date()).toISOString()
+        moment(new Date()).toISOString(),
       ];
 
       pool
@@ -308,13 +314,13 @@ module.exports.postCreatePOST = [
           console.log(value);
           res.json({
             message: 'Created post successfully!',
-            post_id: message.id
-          })
+            post_id: message.id,
+          });
         })
 
         .catch((err) => next(err));
     }
-  }
+  },
 ];
 
 module.exports.postDeleteDELETE = function (req, res, next) {
@@ -332,25 +338,25 @@ module.exports.postDeleteDELETE = function (req, res, next) {
     else {
       const responses = await Promise.all([
         client.query(findCommentsQuery, [postId]),
-        client.query(findPostQuery, [postId])
+        client.query(findPostQuery, [postId]),
       ]);
 
       const message = responses[1].rows[0];
       if (!res.locals.currentUser) {
         res.status(401);
         res.json({
-          message: 'You need to be logged in to delete a post'
+          message: 'You need to be logged in to delete a post',
         });
       } else if (message.user_id !== res.locals.currentUser.user_id) {
         res.status(403);
         res.json({
           message:
-            'You need to be the same user as the post creator to delete it.'
+            'You need to be the same user as the post creator to delete it.',
         });
       } else if (!message) {
         res.status(404);
         res.json({
-          message: 'Post not found...'
+          message: 'Post not found...',
         });
       } else {
         const deleteCommentsQuery = `
@@ -364,7 +370,7 @@ module.exports.postDeleteDELETE = function (req, res, next) {
             [postId]
           );
           const deletePostResponse = await client.query(deletePostQuery, [
-            postId
+            postId,
           ]);
 
           res.json({ message: 'Post deleted successfully.' });
@@ -393,13 +399,14 @@ module.exports.signUpPOST = [
     res.locals.newUser = {
       username,
       first_name,
-      last_name
+      last_name,
     };
 
-    const emailValidator = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const emailValidator =
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if (!emailValidator.test(username)) {
       res.locals.errors.push({
-        msg: 'You must enter a valid email address.'
+        msg: 'You must enter a valid email address.',
       });
     }
     if (
@@ -408,19 +415,18 @@ module.exports.signUpPOST = [
       ).rowCount) > 0
     ) {
       res.locals.errors.push({
-        msg: 'This email has been used before. Try to log in.'
+        msg: 'This email has been used before. Try to log in.',
       });
     }
 
     if (password.length < 8 || password.length > 72) {
       res.locals.errors.push({
-        msg:
-          'Your password needs to be 8 characters or longer as well as 72 characters or less.'
+        msg: 'Your password needs to be 8 characters or longer as well as 72 characters or less.',
       });
     }
     if (password !== passwordConfirmation) {
       res.locals.errors.push({
-        msg: 'Your password and password confirmation must match.'
+        msg: 'Your password and password confirmation must match.',
       });
     }
 
@@ -450,7 +456,7 @@ module.exports.signUpPOST = [
       userId,
       user.username,
       user.first_name,
-      user.last_name
+      user.last_name,
     ];
 
     const createUserPassQuery = `
@@ -467,7 +473,7 @@ module.exports.signUpPOST = [
         else {
           Promise.all([
             client.query(createUserQuery, createUserQueryValues),
-            client.query(createUserPassQuery, createUserPassQueryValues)
+            client.query(createUserPassQuery, createUserPassQueryValues),
           ])
             .then((values) =>
               res.json({ message: 'Successfully created user. Please log in.' })
@@ -477,7 +483,7 @@ module.exports.signUpPOST = [
         }
       });
     }
-  }
+  },
 ];
 
 module.exports.commentDeleteDELETE = function (req, res, next) {
@@ -489,14 +495,14 @@ module.exports.commentDeleteDELETE = function (req, res, next) {
     const comment = value.rows[0];
     if (!res.locals.currentUser) {
       res.json({
-        message: 'You need to be logged in to delete a post'
+        message: 'You need to be logged in to delete a post',
       });
     } else if (!comment) {
       res.json({ message: 'Comment not found...' });
     } else if (comment.user_id !== res.locals.currentUser.user_id) {
       res.json({
         message:
-          'You need to be the same user as the post creator to delete this comment.'
+          'You need to be the same user as the post creator to delete this comment.',
       });
     } else {
       const deletePostQuery = `
