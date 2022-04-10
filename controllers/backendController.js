@@ -5,7 +5,10 @@ const passport = require('../middleware/passport');
 const bcrypt = require('bcrypt');
 const validator = require('express-validator');
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true,
+});
 const { v5 } = require('uuid');
 const formidable = require('formidable');
 
@@ -51,12 +54,10 @@ module.exports.loginPOST = [
         res.locals.errors.push({
           msg: 'Incorrect email/password combination.',
         });
-        return res
-          .status(400)
-          .json({
-            message: 'Something is not right',
-            errors: res.locals.errors,
-          });
+        return res.status(400).json({
+          message: 'Something is not right',
+          errors: res.locals.errors,
+        });
       } else {
         req.login(user, { session: false }, (err) => {
           if (err) res.send(err);

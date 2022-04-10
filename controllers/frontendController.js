@@ -1,5 +1,8 @@
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true,
+});
 const validator = require('express-validator');
 const { v5 } = require('uuid');
 const moment = require('moment');
