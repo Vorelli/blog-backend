@@ -13,19 +13,15 @@ const backendRouter = require('./routes/backend');
 var app = express();
 
 app.use(function (req, res, next) {
-  console.log(req.url.split('/'));
-  console.log(JSON.parse(process.env.ALLOWEDHOSTS).allowedHosts);
-  if (req.url.split('/')[1] == 'backend') {
-    if (
-      JSON.parse(process.env.ALLOWEDHOSTS).allowedHosts.find(
-        (val) => val == req.hostname
-      )
-    ) {
-      res.header('Access-Control-Allow-Origin', '*');
-    } else {
-      return res.json({ message: 'Unauthorized access to backend.' });
-    }
+  if (
+    req.url.split('/')[1] == 'backend' &&
+    !JSON.parse(process.env.ALLOWEDHOSTS).allowedHosts.find(
+      (val) => val == req.hostname
+    )
+  ) {
+    return res.json({ message: 'Unauthorized access to backend.' });
   }
+  res.header('Access-Control-Allow-Origin', '*');
 
   res.setHeader(
     'Access-Control-Allow-Headers',
