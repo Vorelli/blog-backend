@@ -7,7 +7,7 @@ const validator = require('express-validator');
 const { Pool } = require('pg');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: true,
+  ssl: { rejectUnauthorized: false },
 });
 const { v5 } = require('uuid');
 const formidable = require('formidable');
